@@ -47,10 +47,8 @@ def query():
         # TODO：【【【已有模型和web的API】】】实体抽取关系任务的调用test()!!!
     recognized_entity = test(text, model, args)#【【需要调用已有模型，返回的可能是字符串 or pickle文件的列表】】
     res = jsonify(recognized_entity)
-    print("result:", recognized_entity)
+    # print("result:", recognized_entity)
     return res
-
-
 
 
 app.config['UPLOAD_FOLDER'] = 'upload/'
@@ -81,8 +79,6 @@ def result():
    if request.method == 'POST':
       result = request.form #拿到前端传输的表单数据
       return render_template("result.html",result = result)
-
-
 
 
 @app.route('/preproc', methods=["GET"])

@@ -6,6 +6,8 @@ import pickle
 import argparse
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
+import pandas as pd
+from difflib import SequenceMatcher
 
 """部分数据预处理的过程，包括读取数据、转换为特征、构建数据集等。
 1. NerProcessor 类，通过 read_data 方法读取BIO标注的数据文件，
@@ -35,6 +37,7 @@ class InputFeatures(object):
         self.ori_tokens = ori_tokens
 
 # NERProcessor类负责处理数据，读取和转换示例
+# TODO 替代文件IO
 class NerProcessor(object):
     def read_data(self, input_file):
         # 读取BIO标注的数据文件
@@ -44,8 +47,10 @@ class NerProcessor(object):
             labels = []
             
             for line in f.readlines():   
+                
                 contends = line.strip()
                 tokens = line.strip().split(" ")
+                # print("tokens: ", tokens)
                 if len(tokens) == 2:
                     words.append(tokens[0])
                     labels.append(tokens[1])
@@ -60,6 +65,7 @@ class NerProcessor(object):
                         lines.append([' '.join(label), ' '.join(word)])
                         words = []
                         labels = []
+
             return lines
     
     def get_labels(self, args):
@@ -72,6 +78,7 @@ class NerProcessor(object):
         else:
             # 若不存在，从训练数据中提取标签信息
             logger.info(f"loading labels info from train file and dump in {args.output_dir}")
+            print(args.train_file)
             with open(args.train_file, encoding='utf-8') as f:
                 for line in f.readlines():
                     tokens = line.strip().split(" ")
@@ -187,7 +194,9 @@ def get_Dataset(args, processor, tokenizer, mode="train"):
         print("load test file from:", filepath)
     else:
         raise ValueError("mode must be one of train, eval, or test")
+    
     examples = processor.get_examples(filepath)
+    # print("examples: ", examples)
     label_list = args.label_list
     # print('label_list: ', label_list)
     features = convert_examples_to_features(
@@ -252,3 +261,45 @@ def get_args():
     # num_labels = len(label_list)
     args.label_list = label_list
     return args
+
+
+# ===========================
+# 实体消歧
+# ===========================
+
+class StringMatchingDisambiguator:
+    def __init__(self, data_path="datas/filtered_data.csv"):
+        self.df = pd.read_csv(data_path, encoding="utf-8")
+        self.entity_set = set(self.df["公司"].values)
+
+    def disambiguate(self, entity_list):
+        disambiguated_list = set()
+        for entity in entity_list:
+            matched_entity, similarity = self.match_entity(entity)
+            # print(entity, matched_entity, similarity)
+            if similarity > 0.6:
+                disambiguated_list.add(matched_entity)
+        return list(disambiguated_list)
+
+    def match_entity(self, entity):
+        best_match = None
+        max_similarity = 0.0
+        for candidate in self.entity_set:
+            similarity = self.calculate_similarity(entity, candidate)
+            if similarity > max_similarity:
+                max_similarity = similarity
+                best_match = candidate
+        return best_match, max_similarity
+
+    def calculate_similarity(self, entity1, entity2):
+        # 在此处实现字符串相似度度量方法，例如编辑距离、余弦相似度等
+        # 返回相似度分值，范围通常在0到1之间
+        # TODO 这里可以再优化一下，一是用其他的度量方法（编辑距离）；二是计算相似度时去掉一些无关的词（如“公司”、"集团"）
+        return SequenceMatcher(None, entity1, entity2).ratio()
+
+
+if __name__ == '__main__':
+    model = StringMatchingDisambiguator()
+    entity_list = ["中国石油", "中国石化", "中石化", "中石油"]
+    # print(model.entity_set)
+    print(model.disambiguate(entity_list))

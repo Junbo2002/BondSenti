@@ -26,6 +26,7 @@ from pytorch_transformers import (WEIGHTS_NAME, BertConfig, BertTokenizer)
 """
 
 
+# TODO 替代文件IO
 def forward(args, model):
     # if os.path.exists(os.path.join(args.output_dir, "label2id.pkl")):
     #     with open(os.path.join(args.output_dir, "label2id.pkl"), "rb") as f:
@@ -41,7 +42,7 @@ def forward(args, model):
     processor = NerProcessor()
 
     id2label = {i: label for i, label in enumerate(["B-STO", "I-ORG", "B-ORG", "I-STO", "O"])}
-
+    # print(args)
     if args.do_test:
         label_map = {i : label for i, label in enumerate(label_list)}
         tokenizer = BertTokenizer.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
@@ -49,7 +50,7 @@ def forward(args, model):
         # model = BERT_BiLSTM_CRF.from_pretrained(args.output_dir, need_birnn=args.need_birnn, rnn_dim=args.rnn_dim)
         model.to(device)
 
-        test_examples, test_features, test_data = get_Dataset(args, processor, tokenizer, mode="test")  # print
+        test_examples, test_features, test_data = get_Dataset(args, processor, tokenizer, mode="test") 
         all_ori_tokens = [f.ori_tokens for f in test_features]
         all_ori_labels = [e.label.split(" ") for e in test_examples]
         test_sampler = SequentialSampler(test_data)
@@ -57,7 +58,6 @@ def forward(args, model):
         model.eval()
 
         pred_labels = []
-        
         for b_i, (input_ids, input_mask, segment_ids, label_ids) in enumerate(tqdm(test_dataloader, desc="Predicting")):
             input_ids = input_ids.to(device)
             input_mask = input_mask.to(device)
@@ -68,11 +68,14 @@ def forward(args, model):
             pred_labels = [[id2label[idx] for idx in l] for l in logits]
 
         assert len(pred_labels) == len(all_ori_tokens) == len(all_ori_labels)
-
+        # print("all_ori_tokens:")
+        # print(all_ori_tokens)
+        # print("pred_labels:")
+        # print(pred_labels)
         # with open(os.path.join(args.output_dir, "token_labels_.txt"), "w", encoding="utf-8") as f:
         all_ori_tokens = [i[1: -1] for i in all_ori_tokens]
         pred_labels = [i[1: -1] for i in pred_labels]
-        load_from_result_test(all_ori_tokens, pred_labels)
+        
         # for ori_tokens, ori_labels,prel in zip(all_ori_tokens, all_ori_labels, pred_labels):
         #     for ot,ol,pl in zip(ori_tokens, ori_labels, prel):
         #         if ot in ["[CLS]", "[SEP]"]:
@@ -80,6 +83,7 @@ def forward(args, model):
         #         else:
         #             f.write(f"{ot} {ol} {pl}\n")
         #     f.write("\n")
+
         case_words_org, case_words_sto = load_from_result_test(all_ori_tokens, pred_labels)
         return case_words_org, case_words_sto
 
@@ -87,35 +91,37 @@ def forward(args, model):
 def load_from_result_test(case_word_list, case_label_list):
     case_words_org = [[] for i in range(len(case_label_list))]
     case_words_sto = [[] for i in range(len(case_label_list))]
-
-    for idx in range(len(case_label_list)):
-        label_list = case_label_list[idx]
-        word_list = case_word_list[idx]
+    # print("case_word_list:")
+    # print(case_word_list)
+    # print("case_label_list:")
+    # print(case_label_list)
+    for sentence_idx in range(len(case_label_list)):
+        label_list = case_label_list[sentence_idx]
+        word_list = case_word_list[sentence_idx]
         begin_pos = -1
-        for i in range(len(label_list)):
-            if label_list[i] == 'O' and begin_pos == -1:
+        for word_idx in range(len(label_list)):
+            if label_list[word_idx] == 'O' and begin_pos == -1:
                 continue
-            if label_list[i] == 'O' and begin_pos != -1:
-                reg = ''.join(word_list[begin_pos:i])
+            if label_list[word_idx] == 'O' and begin_pos != -1:
+                reg = ''.join(word_list[begin_pos:word_idx])
                 sto_count = 0
                 org_count = 0
-                for j in range(begin_pos, i):
+                for j in range(begin_pos, word_idx):
                     ty = label_list[j][2:]
                     if ty == 'STO':
                         sto_count += 1
                     else:
                         org_count += 1
                 if sto_count < org_count:
-                    case_words_org[idx].append(reg)
+                    case_words_org[sentence_idx].append(reg)
                 else:
-                    case_words_sto[idx].append(reg)
+                    case_words_sto[sentence_idx].append(reg)
                 begin_pos = -1
                 continue
-            if label_list[i][0] == 'B':
-                begin_pos = i
-                continue
-            if label_list[i][0] == 'I':
-                continue
+            if label_list[word_idx][0] == 'B':
+                begin_pos = word_idx
+            # if label_list[word_idx][0] == 'I':
+            #     continue
     return case_words_org, case_words_sto
 
 
