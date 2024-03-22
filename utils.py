@@ -264,7 +264,7 @@ def get_args():
 
 
 # ===========================
-# 实体消歧
+# 实体消歧(基于知识库)
 # ===========================
 
 class StringMatchingDisambiguator:
@@ -298,8 +298,60 @@ class StringMatchingDisambiguator:
         return SequenceMatcher(None, entity1, entity2).ratio()
 
 
+# ===========================
+# 实体消歧(基于连通图)
+# ===========================
+class ConnectedComponentsDisambiguator:
+    def __init__(self):
+        pass
+
+    def calculate_similarity(self, entity_list):
+        similarity_matrix = [[SequenceMatcher(None, entity1, entity2).ratio()
+                              for entity1 in entity_list] for entity2 in entity_list]
+        return similarity_matrix
+
+    def disambiguate(self, entity_list, threshold=0.6):
+        similarity_matrix = self.calculate_similarity(entity_list)
+        num_entities = len(similarity_matrix)
+        visited = [False] * num_entities
+        connected_components = []
+
+        def dfs(node, component):
+            visited[node] = True
+            component.append(node)
+            for neighbor in range(num_entities):
+                if similarity_matrix[node][neighbor] >= threshold and not visited[neighbor]:
+                    dfs(neighbor, component)
+
+        for node in range(num_entities):
+            if not visited[node]:
+                component = []
+                dfs(node, component)
+                connected_components.append(component)
+
+        # 从每个连通分支中选择一个实体作为代表
+        representatives = self.get_representatives(entity_list, similarity_matrix, connected_components)
+        return representatives
+
+    def get_representatives(self, entity_list, similarity_matrix, connected_components):
+        representatives = []
+        for component in connected_components:
+            max_similarity = 0.0
+            representative = None
+            for entity in component:
+                similarity = sum(similarity_matrix[entity])
+                if similarity > max_similarity:
+                    max_similarity = similarity
+                    representative = entity
+            representatives.append(entity_list[representative])
+        return representatives
+
+
 if __name__ == '__main__':
-    model = StringMatchingDisambiguator()
-    entity_list = ["中国石油", "中国石化", "中石化", "中石油"]
+    # model = StringMatchingDisambiguator()
+    entity_list = ["中国石油", "中国石化", "中石化", "中石油", "中国石油集团", "石油天然气"]
     # print(model.entity_set)
-    print(model.disambiguate(entity_list))
+    # print(model.disambiguate(entity_list))
+
+    model = ConnectedComponentsDisambiguator()
+    print(model.calculate_connected_components(entity_list))

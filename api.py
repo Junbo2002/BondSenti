@@ -239,7 +239,7 @@ def summarize():
     text = request.form['text']
     sent = nltk.sent_tokenize(text)
     if len(sent) < 2:
-        summary1 =  "please pass more than 3 sentences to summarize the text"
+        summary1 = "please pass more than 3 sentences to summarize the text"
     else:
         #summary = gensim.summarization.summarize(text)
         summary = text
@@ -253,5 +253,5 @@ def summarize():
 
 if __name__ == '__main__':
     sys.path.append(r"D:\BERT_Chinese\Finish_API\Flink")
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
 

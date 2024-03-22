@@ -6,10 +6,10 @@ import pickle
 import subprocess
 import Levenshtein as L
 from test import forward
-from utils import StringMatchingDisambiguator
+from utils import StringMatchingDisambiguator, ConnectedComponentsDisambiguator
 
-disambiguator = StringMatchingDisambiguator()
-
+# disambiguator = StringMatchingDisambiguator()
+disambiguator = ConnectedComponentsDisambiguator()
 
 def test(test_data, model, args):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
