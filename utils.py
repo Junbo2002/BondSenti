@@ -37,7 +37,6 @@ class InputFeatures(object):
         self.ori_tokens = ori_tokens
 
 # NERProcessor类负责处理数据，读取和转换示例
-# TODO 替代文件IO
 class NerProcessor(object):
     def read_from_file(self, file_path):
         # 读取BIO标注的数据文件
@@ -247,7 +246,7 @@ def get_args():
     parser.add_argument("--warmup_proprotion", default=0.1, type=float)
     parser.add_argument("--use_weight", default=1, type=int)
     parser.add_argument("--local_rank", type=int, default=-1)
-    parser.add_argument("--seed", type=int, default=2019)
+    parser.add_argument("--seed", type=int, default=2024)
     parser.add_argument("--fp16", default=False)
     parser.add_argument("--loss_scale", type=float, default=0)
     parser.add_argument('--gradient_accumulation_steps', type=int, default=1)

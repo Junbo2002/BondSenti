@@ -1,0 +1,175 @@
+{% extends "navigator.html" %}
+
+{% block css %}
+	<style>
+		/* 样式可以在CSS文件中定义，或者添加到<head>元素内的<style>标签中 */
+		/* 这些样式用于控制按钮的位置和外观 */
+		.btn {
+			display: block;
+			/* 将按钮设置为块级元素，使其在新行上显示 */
+			margin-top: 10px;
+			/* 添加上外边距，将按钮与文本框分隔开 */
+		}
+
+		.flex-container {
+		  display: flex;
+		  align-items: flex-end;
+		}
+
+		#button_div {
+			margin-left: 20px;
+			display: flex;
+  			flex-direction: column;
+		}
+
+		#button_div input {
+			/*margin-left: 20px;*/
+			/*position: relative;*/
+			/*float: left;*/
+			/*bottom: 0;*/
+			/* 增加提交按钮的左边距，将其向右移动 */
+		}
+
+		#txt {
+			float: left;
+
+		}
+
+
+
+		.fh5co-heading-colored {
+			text-align: left;
+			/* 将标题左对齐 */
+		}
+
+		.fh5co-heading-colored+.fh5co-heading-colored {
+			margin-top: 10px;
+			/* 调整此处的数值以减小或增加上外边距 */
+		}
+	</style>
+{% endblock %}
+
+{% block script %}
+	<script>
+
+		function showresult(res) {
+			console.log(res);
+			$("#result").text(JSON.stringify(res, null, 2));
+
+			$("#bt_submit1").prop('disabled', false).val("获取开放域实体");
+			$("#bt_submit2").prop('disabled', false).val("获取数据库实体");
+		}
+
+		// 函数用于发起HTTP POST请求，向服务器发送文本内容，并在成功后调用 fun 函数处理响应数据。
+		// disambiMethod 为歧义消解方法，open 表示获取开放域实体，仅去重，close 表示与数据库比对进行歧义消解。
+		function UrlPOST(txt, fun, disambiMethod="open") {
+			if (txt == "") {
+				return "error parm";
+			}
+			var httpurl = "/query";
+
+			$.ajax({
+				type: "POST",
+				data: `text=${txt}&disambiMethod=${disambiMethod}`,
+				url: httpurl,
+				success: function (data) {
+					fun(data);
+				}
+			});
+		}
+
+		// $(document).ready(function(){...}) 是jQuery代码
+		function bt_sub_fun(disambiMethod) {
+			return function () {
+				var txt = $("#txt").val();
+				if (txt == "") {
+					alert("文本内容不能为空")
+					return;
+				}
+
+				// 禁用按钮并更改文本
+        		$(this).prop('disabled', true).val("正在处理...");
+
+				var voc = "";
+				voc = UrlPOST(txt, showresult, disambiMethod);
+			}
+		}
+
+		// 它在文档加载完成后执行，将点击按钮事件绑定到 bt_submit 元素上。
+		$(document).ready(function () {
+			$("#bt_submit1").click(bt_sub_fun("open"));
+		});
+
+		$(document).ready(function () {
+			$("#bt_submit2").click(bt_sub_fun("close"));
+		});
+	</script>
+{% endblock %}
+
+{% block mainbody %}
+	<div class="fh5co-narrow-content" style="padding-bottom: 1em">
+		<div class="row">
+			<div class="col-md-5">
+				<h1 class="animate-box" >金融实体识别</h1>
+				<p style="color: rgb(0,0,0);line-height:3em;">
+					Bert-BiLSTM-CRF+Embedding模型
+				</p>
+				<p style="color: rgb(0,0,0);line-height:3em;">
+					我们将根据输入文本内容，匹配右侧数据库，
+					完成金融领域实体抽取任务。
+				</p>
+
+			</div>
+			<!-- data-animate-effect="fadeInLeft" -->
+			<div class="col-md-6 col-md-push-1 animate-box" >
+				<h1 class="animate-box" >金融实体数据库</h1>
+				<p style="color: rgb(0,0,0);line-height:3em;">
+					我们收集的金融实体信息包括股票ID，股票名称，公司ID，公司名称等信息，详情见
+					<a href="/static/raw_database.csv" style="color: darkred">raw_database.csv</a>，
+					并上传您所感兴趣的金融资讯。
+					我们将抽取数据库覆盖的机构和证券内容及其相关信息
+				</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="fh5co-narrow-content" style="padding-top: 0">
+		<div class="row">
+			<div class="col-md-4 animate-box" >
+				<h1 class="animate-box" >输入待抽取的文本</h1>
+			</div>
+
+		</div>
+		<div class="row">
+			<div class="col-md-12 animate-box" >
+				<div class="fh5co-lead clearfix" style="position: relative">
+					<div class="flex-container">
+						<textarea style="width: 800px;height:200px;" name="txt" id="txt" spellcheck="false"
+						maxlength="" class="com-txt" onfocus="this.select()"></textarea>
+						<div id="button_div">
+							<input type="button" value="获取开放域实体" id="bt_submit1" class="btn btn-primary btn-outline" />
+							<input type="button" value="获取数据库实体" id="bt_submit2" class="btn btn-primary btn-outline" />
+						</div>
+					</div>
+
+				</div>
+
+			</div>
+
+		</div>
+
+		<div class="row" style="transition: none; margin-top: 20px">
+			<div class="col-md-4 animate-box" >
+				<h1 class="animate-box" >实体抽取结果</h1>
+			</div>
+
+			<div class="col-md-12 animate-box" >
+				<textarea style="width: 800px;height:200px;" name="result" id="result" spellcheck="false"
+				maxlength="" class="com-txt"></textarea>
+			</div>
+
+
+		</div>
+
+	</div>
+{% endblock %}

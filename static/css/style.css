@@ -1,3 +1,9 @@
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 @font-face {
   font-family: 'icomoon';
   src: url("../fonts/icomoon/icomoon.eot?srf3rx");
@@ -266,9 +272,9 @@ figure figcaption {
 #fh5co-main {
   width: 85%;
   float: right;
-  -webkit-transition: 0.5s;
-  -o-transition: 0.5s;
-  transition: 0.5s;
+  /*-webkit-transition: 0.5s;*/
+  /*-o-transition: 0.5s;*/
+  /*transition: 0.5s;*/
 }
 @media screen and (max-width: 1200px) {
   #fh5co-main {

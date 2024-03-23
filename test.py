@@ -26,17 +26,7 @@ from pytorch_transformers import (WEIGHTS_NAME, BertConfig, BertTokenizer)
 """
 
 
-# TODO 替代文件IO
 def forward(args, model, text):
-    # if os.path.exists(os.path.join(args.output_dir, "label2id.pkl")):
-    #     with open(os.path.join(args.output_dir, "label2id.pkl"), "rb") as f:
-    #         label2id = pickle.load(f)
-    # else:
-    #     label2id = {l: i for i, l in enumerate(label_list)}
-    #     with open(os.path.join(args.output_dir, "label2id.pkl"), "wb") as f:
-    #         pickle.dump(label2id, f)
-    #
-    # id2label = {value: key for key, value in label2id.items()}
     device = args.device
     label_list = args.label_list
     processor = NerProcessor()
@@ -47,7 +37,6 @@ def forward(args, model, text):
         label_map = {i : label for i, label in enumerate(label_list)}
         tokenizer = BertTokenizer.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
         args = torch.load(os.path.join(args.output_dir, 'training_args.bin'))
-        # model = BERT_BiLSTM_CRF.from_pretrained(args.output_dir, need_birnn=args.need_birnn, rnn_dim=args.rnn_dim)
         model.to(device)
 
         test_examples, test_features, test_data = get_Dataset(args, processor, tokenizer, mode="test", data=text)
@@ -68,21 +57,9 @@ def forward(args, model, text):
             pred_labels = [[id2label[idx] for idx in l] for l in logits]
 
         assert len(pred_labels) == len(all_ori_tokens) == len(all_ori_labels)
-        # print("all_ori_tokens:")
-        # print(all_ori_tokens)
-        # print("pred_labels:")
-        # print(pred_labels)
-        # with open(os.path.join(args.output_dir, "token_labels_.txt"), "w", encoding="utf-8") as f:
+
         all_ori_tokens = [i[1: -1] for i in all_ori_tokens]
         pred_labels = [i[1: -1] for i in pred_labels]
-        
-        # for ori_tokens, ori_labels,prel in zip(all_ori_tokens, all_ori_labels, pred_labels):
-        #     for ot,ol,pl in zip(ori_tokens, ori_labels, prel):
-        #         if ot in ["[CLS]", "[SEP]"]:
-        #             continue
-        #         else:
-        #             f.write(f"{ot} {ol} {pl}\n")
-        #     f.write("\n")
 
         case_words_org, case_words_sto = load_from_result_test(all_ori_tokens, pred_labels)
         return case_words_org, case_words_sto
@@ -91,10 +68,6 @@ def forward(args, model, text):
 def load_from_result_test(case_word_list, case_label_list):
     case_words_org = [[] for i in range(len(case_label_list))]
     case_words_sto = [[] for i in range(len(case_label_list))]
-    # print("case_word_list:")
-    # print(case_word_list)
-    # print("case_label_list:")
-    # print(case_label_list)
     for sentence_idx in range(len(case_label_list)):
         label_list = case_label_list[sentence_idx]
         word_list = case_word_list[sentence_idx]
