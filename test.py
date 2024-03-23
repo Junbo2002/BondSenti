@@ -27,7 +27,7 @@ from pytorch_transformers import (WEIGHTS_NAME, BertConfig, BertTokenizer)
 
 
 # TODO 替代文件IO
-def forward(args, model):
+def forward(args, model, text):
     # if os.path.exists(os.path.join(args.output_dir, "label2id.pkl")):
     #     with open(os.path.join(args.output_dir, "label2id.pkl"), "rb") as f:
     #         label2id = pickle.load(f)
@@ -50,7 +50,7 @@ def forward(args, model):
         # model = BERT_BiLSTM_CRF.from_pretrained(args.output_dir, need_birnn=args.need_birnn, rnn_dim=args.rnn_dim)
         model.to(device)
 
-        test_examples, test_features, test_data = get_Dataset(args, processor, tokenizer, mode="test") 
+        test_examples, test_features, test_data = get_Dataset(args, processor, tokenizer, mode="test", data=text)
         all_ori_tokens = [f.ori_tokens for f in test_features]
         all_ori_labels = [e.label.split(" ") for e in test_examples]
         test_sampler = SequentialSampler(test_data)

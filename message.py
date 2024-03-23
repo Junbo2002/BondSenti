@@ -28,13 +28,13 @@ def test(test_data, model, args):
             seq += i + ' ' + 'O' + '\n' + '\n'
         else:
             seq += i + ' ' + 'O' + '\n'
-    with open('../processed_data/test.txt', 'w', encoding='utf-8') as f2:
-        f2.write(seq)
+    # with open('../processed_data/test.txt', 'w', encoding='utf-8') as f2:
+    #     f2.write(seq)
     print("test_data:", test_data)
     # '--train_file', '../test_text.txt', '--eval_file', '../test_text.txt','--test_file', '../test_text.txt',
     # subprocess.run(['python', '../main/ner.py',
     #                 '--model_name_or_path', "../bert-base-chinese", '--output_dir', '../output'])
-    case_words_org, case_words_sto = forward(args, model)
+    case_words_org, case_words_sto = forward(args, model, seq)
     # print(case_words_org, "\n", case_words_sto)
     # case_words_org, case_words_sto = load_from_result_test('../output/token_labels_.txt')
 

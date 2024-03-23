@@ -39,34 +39,36 @@ class InputFeatures(object):
 # NERProcessor类负责处理数据，读取和转换示例
 # TODO 替代文件IO
 class NerProcessor(object):
-    def read_data(self, input_file):
+    def read_from_file(self, file_path):
         # 读取BIO标注的数据文件
-        with open(input_file, "r", encoding="utf-8") as f:
-            lines = []
-            words = []
-            labels = []
-            
-            for line in f.readlines():   
-                
-                contends = line.strip()
-                tokens = line.strip().split(" ")
-                # print("tokens: ", tokens)
-                if len(tokens) == 2:
-                    words.append(tokens[0])
-                    labels.append(tokens[1])
-                else:
-                    if len(contends) == 0 and len(words) > 0:
-                        label = []
-                        word = []
-                        for l, w in zip(labels, words):
-                            if len(l) > 0 and len(w) > 0:
-                                label.append(l)
-                                word.append(w)
-                        lines.append([' '.join(label), ' '.join(word)])
-                        words = []
-                        labels = []
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        return lines
 
-            return lines
+    def read_data(self, data):
+        lines = []
+        words = []
+        labels = []
+        for line in data:
+            contends = line.strip()
+            tokens = line.strip().split(" ")
+            # print("tokens: ", tokens)
+            if len(tokens) == 2:
+                words.append(tokens[0])
+                labels.append(tokens[1])
+            else:
+                if len(contends) == 0 and len(words) > 0:
+                    label = []
+                    word = []
+                    for l, w in zip(labels, words):
+                        if len(l) > 0 and len(w) > 0:
+                            label.append(l)
+                            word.append(w)
+                    lines.append([' '.join(label), ' '.join(word)])
+                    words = []
+                    labels = []
+
+        return lines
     
     def get_labels(self, args):
         labels = set()
@@ -93,9 +95,12 @@ class NerProcessor(object):
                 labels = {"O", "B", "I"}
         return labels 
 
-    def get_examples(self, input_file):
+    def get_examples(self, input_file, data=None):
         examples = []
-        lines = self.read_data(input_file)
+        if data is None:
+            data = self.read_from_file(input_file)
+        lines = self.read_data(data)
+
         for i, line in enumerate(lines):
             guid = str(i)
             text = line[1]
@@ -104,6 +109,7 @@ class NerProcessor(object):
         return examples
 
 # 将示例转换为特征，用于模型输入
+# TODO 跳过这一步
 def convert_examples_to_features(args, examples, label_list, max_seq_length, tokenizer):
     label_map = {label : i for i, label in enumerate(label_list)}
     features = []
@@ -184,7 +190,7 @@ def convert_examples_to_features(args, examples, label_list, max_seq_length, tok
     return features
 
 # 获取数据集
-def get_Dataset(args, processor, tokenizer, mode="train"):
+def get_Dataset(args, processor, tokenizer, mode="train", data=None):
     if mode == "train":
         filepath = args.train_file
     elif mode == "eval":
@@ -194,8 +200,11 @@ def get_Dataset(args, processor, tokenizer, mode="train"):
         print("load test file from:", filepath)
     else:
         raise ValueError("mode must be one of train, eval, or test")
-    
-    examples = processor.get_examples(filepath)
+
+    if data is None:
+        examples = processor.get_examples(filepath)
+    else:
+        examples = processor.get_examples(filepath, data=data.split('\n'))
     # print("examples: ", examples)
     label_list = args.label_list
     # print('label_list: ', label_list)
@@ -310,7 +319,7 @@ class ConnectedComponentsDisambiguator:
                               for entity1 in entity_list] for entity2 in entity_list]
         return similarity_matrix
 
-    def disambiguate(self, entity_list, threshold=0.6):
+    def disambiguate(self, entity_list, threshold=0.4):
         similarity_matrix = self.calculate_similarity(entity_list)
         num_entities = len(similarity_matrix)
         visited = [False] * num_entities
