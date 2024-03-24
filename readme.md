@@ -1,5 +1,1 @@
-../output
-
-../bert-base
-
-../processed_data
+项目主页：http://120.48.78.248/
