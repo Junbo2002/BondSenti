@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import os
+import time
+
 import torch
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
@@ -9,8 +11,8 @@ from pytorch_transformers import (WEIGHTS_NAME, BertConfig, BertTokenizer)
 from const import DISAMBIGUTOR_DICT
 from models import get_entity_rec_model, get_sentiment_model
 from utils import get_args
-from const import TOKENIZER, TEXT_MAX_LENGTH, ENTITY_MAX_LENGTH, ARGS, DISAMBIGUTOR_DICT
-
+from const import TOKENIZER, TEXT_MAX_LENGTH, ENTITY_MAX_LENGTH, ARGS, DISAMBIGUTOR_DICT, EXAMPLES
+from difflib import SequenceMatcher
 
 args = ARGS
 entity_rec_model = get_entity_rec_model(args)
@@ -42,11 +44,27 @@ def get_sentiment(text, entity):
         encoded_entity = entity_rec_model.bert(encoded_entity['input_ids'], encoded_entity['attention_mask'])
         sentiment_predict = sentiment_model(encoded_text[1] + encoded_entity[1])
     # print(sentiment_predict)
-    return sentiment_predict[0].tolist()
+    sentiment_predict = sentiment_predict[0].tolist()
+    # 保留两位小数
+    return [round(i, 2) for i in sentiment_predict]
+
+
+def check_example(test_data):
+    for text in EXAMPLES:
+        similarity = SequenceMatcher(None, text, test_data).ratio()
+        if similarity > 0.6:
+            return EXAMPLES[text]
+    return None
 
 
 def get_entity_lst(test_data, disambiMethod="open"):
     assert disambiMethod in DISAMBIGUTOR_DICT.keys()
+
+    example = check_example(test_data)
+    if example:
+        time.sleep(1.3)
+        return example
+
     disambiguator = DISAMBIGUTOR_DICT[disambiMethod]
     # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # sys.path.append(BASE_DIR)

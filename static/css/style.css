@@ -111,8 +111,8 @@ figure figcaption {
   overflow-y: scroll;
   /* background: #e6e6e6; */
   /* background: darkred; */
-  background: rgb(186,42,23);
-
+  /* background: rgb(186,42,23); */
+  background: linear-gradient(to bottom, rgb(186,42,23), rgb(133,58,137));
   z-index: 1001;
   -webkit-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.35);
   -moz-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.35);
@@ -122,6 +122,7 @@ figure figcaption {
   -webkit-transition: 0.5s;
   -o-transition: 0.5s;
   transition: 0.5s;
+  
 }
 #fh5co-aside.border {
   border-right: 1px solid #e6e6e6;

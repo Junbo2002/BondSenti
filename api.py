@@ -40,10 +40,7 @@ def entity_recognize():
 def query():
     """
     查询实体接口
-    :return: [ TODO
-      "技研株式会社",
-      "大地熊"
-    ]
+    :return:
     """
     text = request.values['text']
     disambiMethod = request.values['disambiMethod']
@@ -55,7 +52,7 @@ def query():
     return jsonify(recognized_entity)
 
 
-@app.route('/upload', methods=['GET', 'POST'])
+@app.route('/upload', methods=['POST'])
 def upload():
     """
     上传文件接口
@@ -67,12 +64,12 @@ def upload():
         # secure_filename检查客户端上传的文件名，确保安全，注意文件名称不要全中文！！！
         f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
         # return render_template('upload.html')# 上传成功界面
-        return "<script>alert('上传成功'); window.location = '/keyExt';</script>"
-    # else:
-        # return render_template('index.html')# 未上传的界面
+        return "<script>alert('上传成功'); window.location = '/entityRec';</script>"
+    else:
+        return 'No selected file', 400
 
 
-@app.route('/upload/<filename>', methods=['GET', 'POST'])
+@app.route('/upload/<filename>', methods=['GET'])
 def download(filename):
     """
     下载文件接口
