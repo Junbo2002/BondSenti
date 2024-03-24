@@ -46,6 +46,17 @@
 			margin-top: 10px;
 			/* 调整此处的数值以减小或增加上外边距 */
 		}
+
+		/* 表格样式 */
+		table {
+			width: 100%; /* 设置表格宽度为父元素的100% */
+			border-collapse: collapse; /* 合并单元格边框 */
+		}
+
+		th, td {
+			border: 1px solid #ccc; /* 设置单元格边框样式 */
+			padding: 8px; /* 设置单元格内边距 */
+		}
 	</style>
 {% endblock %}
 
@@ -53,9 +64,9 @@
 	<script>
 
 		function showresult(res) {
-			console.log(res);
+			// console.log(res);
+			createTable(res);
 			$("#result").text(JSON.stringify(res, null, 2));
-
 			$("#bt_submit1").prop('disabled', false).val("获取开放域实体");
 			$("#bt_submit2").prop('disabled', false).val("获取数据库实体");
 		}
@@ -103,31 +114,68 @@
 		$(document).ready(function () {
 			$("#bt_submit2").click(bt_sub_fun("close"));
 		});
+
+		function createTable(res) {
+			var tableContainer = $('#table-container');
+			// 清空容器
+			tableContainer.empty();
+			// 创建表格元素
+			var table = $('<table></table>');
+
+			// 创建表头行
+			var headerRow = $('<tr></tr>');
+			headerRow.append('<th>实体名称</th>');
+			headerRow.append('<th>强悲观</th>');
+			headerRow.append('<th>弱悲观</th>');
+			headerRow.append('<th>中性</th>');
+			headerRow.append('<th>弱乐观</th>');
+			headerRow.append('<th>强乐观</th>');
+
+			// 添加表头行到表格
+			table.append(headerRow);
+
+			// 创建数据行
+			// 遍历res中的每个实体 res是一个字典，key是实体名称，value是情绪值[]
+			for (var key in res) {
+				var dataRow1 = $('<tr></tr>');
+				dataRow1.append('<td>' + key + '</td>');
+				//浮点数保留两位小数
+				for (var i = 0; i < res[key].length; i++) {
+					dataRow1.append('<td>' + res[key][i].toFixed(2) + '</td>');
+				}
+
+				// 添加数据行到表格
+				table.append(dataRow1);
+			}
+
+			// 将表格添加到容器中
+			tableContainer.append(table);
+		}
+
 	</script>
 {% endblock %}
 
 {% block mainbody %}
 	<div class="fh5co-narrow-content" style="padding-bottom: 1em">
 		<div class="row">
-			<div class="col-md-5">
-				<h1 class="animate-box" >金融实体识别</h1>
+			<div class="col-md-5 animate-box">
+				<h1 class="animate-box" >金融实体情绪识别</h1>
 				<p style="color: rgb(0,0,0);line-height:3em;">
 					Bert-BiLSTM-CRF+Embedding模型
 				</p>
 				<p style="color: rgb(0,0,0);line-height:3em;">
-					我们将根据输入文本内容，匹配右侧数据库，
-					完成金融领域实体抽取任务。
+					我们将根据输入文本内容，识别涉及的全部实体，
+					同时给出文本内容和实体的情绪关系。
 				</p>
 
 			</div>
 			<!-- data-animate-effect="fadeInLeft" -->
 			<div class="col-md-6 col-md-push-1 animate-box" >
-				<h1 class="animate-box" >金融实体数据库</h1>
+				<h1 class="animate-box" >金融实体情绪数据库</h1>
 				<p style="color: rgb(0,0,0);line-height:3em;">
-					我们收集的金融实体信息包括股票ID，股票名称，公司ID，公司名称等信息，详情见
-					<a href="/static/raw_database.csv" style="color: darkred">raw_database.csv</a>，
-					并上传您所感兴趣的金融资讯。
-					我们将抽取数据库覆盖的机构和证券内容及其相关信息
+					我们收集的金融媒体信息包括公司名称、摘要、媒体、日期、情绪指标等信息，详情见
+					<a href="/static/data.csv" style="color: darkred">data.csv</a>。
+					上传您所感兴趣的金融资讯，我们将抽取数据库覆盖的公司实体。同时，我们也支持开放域实体的抽取和情绪分析。
 				</p>
 			</div>
 		</div>
@@ -135,8 +183,8 @@
 
 	<div class="fh5co-narrow-content" style="padding-top: 0">
 		<div class="row">
-			<div class="col-md-4 animate-box" >
-				<h1 class="animate-box" >输入待抽取的文本</h1>
+			<div class="col-md-6 animate-box" >
+				<h1 class="animate-box" >输入您感兴趣的文本</h1>
 			</div>
 
 		</div>
@@ -168,7 +216,12 @@
 				maxlength="" class="com-txt"></textarea>
 			</div>
 
+			
 
+		</div>
+
+		<div class="row" style="transition: none; margin: 10px 5px 0 0">
+			<div id="table-container"></div>
 		</div>
 
 	</div>

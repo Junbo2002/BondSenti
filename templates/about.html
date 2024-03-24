@@ -1,9 +1,158 @@
 {% extends "navigator.html" %}
 
+{% block css %}
+	<style>
+		.profile-component {
+			/* display: flex; */
+			align-items: center;
+			width: 50%;
+			float: left;
+			margin: 1vw 0;
+			padding-left: 10px;
+		}
+
+		.info {
+			float: left;
+			/* 垂直居中 */
+			height: 100%;
+			margin-top: 9px;
+			padding-left: 10px;
+			
+		}
+
+
+		.avatar {
+			float: left;
+			width: 100px;
+			height: 110px;
+			margin-right: 10px;
+		}
+
+		.avatar-img {
+			float: left;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			border-radius: 50%;
+		}
+
+		.name {
+			font-size: 20px;
+			margin: 0;
+		}
+
+		.college,
+		.major {
+			margin: 0;
+		}
+	</style>
+{% endblock %}
+
+{% block script %}
+	<script>
+		$(document).ready(function () {
+			personInfo = {
+				'cxb': {
+					'avatarSrc': '/static/images/avator/cxb.png',
+					'name': '陈学彬（指导老师）',
+					'college': '四川大学',
+					'major': '经济学院 讲席教授'
+				},
+				'lyw': {
+					'avatarSrc': '/static/images/avator/lyw.png',
+					'name': '刘益伟（队长）',
+					'college': '四川大学',
+					'major': '软件学院，软件工程'
+				},
+				'zst': {
+					'avatarSrc': '/static/images/avator/zst.jpg',
+					'name': '周姝彤',
+					'college': '四川大学',
+					'major': '经济学院，经济学'
+				},
+				'wjb': {
+					'avatarSrc': '/static/images/avator/cxb.png',
+					'name': '王俊博',
+					'college': '四川大学',
+					'major': '软件学院，软件工程'
+				},
+				'xy': {
+					'avatarSrc': '/static/images/avator/xy.jpg',
+					'name': '谢妍',
+					'college': '四川大学',
+					'major': '经济学院，金融工程'
+				},
+				'cx': {
+					'avatarSrc': '/static/images/avator/cxb.png',
+					'name': '陈曦',
+					'college': '四川大学',
+					'major': '经济学院，经济学'
+				},
+				'wyy': {
+					'avatarSrc': '/static/images/avator/wyy.jpg',
+					'name': '王榆垚',
+					'college': '四川大学',
+					'major': '经济学院，计算金融交叉实验班'
+				},
+				'hxx': {
+					'avatarSrc': '/static/images/avator/hxx.png',
+					'name': '胡茜茜',
+					'college': '四川大学',
+					'major': '文学与新闻学院，广告学'
+				}
+			};
+
+			// 创建组件函数
+			function createProfileComponent(avatarSrc, name, college, major) {
+				var profileComponent = $('<div>').addClass('profile-component');
+				var avatarDiv = $('<div>').addClass('avatar');
+				var avatarImg = $('<img>').addClass('avatar-img').attr('src', avatarSrc).attr('alt', 'Avatar');
+				console.log(avatarImg);
+				var infoDiv = $('<div>').addClass('info');
+				var nameHeading = $('<h2>').addClass('name').text(name);
+				var collegeParagraph = $('<p>').addClass('college').text(college);
+				var majorParagraph = $('<p>').addClass('major').text(major);
+
+				avatarDiv.append(avatarImg);
+				infoDiv.append(nameHeading, collegeParagraph, majorParagraph);
+				profileComponent.append(avatarDiv, infoDiv);
+
+				return profileComponent;
+			}
+
+			// 在不同的位置使用组件，并传入不同的人员信息
+			for (var person in personInfo) {
+				var profileComponent = createProfileComponent(personInfo[person].avatarSrc, personInfo[person].name, personInfo[person].college, personInfo[person].major);
+				$('#person-container').append(profileComponent);
+			}
+
+
+			// $('#person-container').append(person1);
+			// $('#person-container').append(person2);
+
+
+		});
+	</script>
+{% endblock %}
+
 {% block mainbody %}
-	<div class="fh5co-narrow-content">
-		<h1>
-			About us
-		</h1>
+<div class="fh5co-narrow-content">
+	<h1>
+		关于我们
+	</h1>
+
+
+	<div class="row" id="person-container">
+		<!-- <div class="profile-component">
+			<div class="avatar">
+			  <img class="avatar-img" src="" alt="Avatar">
+			</div>
+			<div class="info">
+			  <h2 class="name"></h2>
+			  <p class="college"></p>
+			  <p class="major"></p>
+			</div>
+		  </div> -->
 	</div>
+</div>
 {% endblock %}

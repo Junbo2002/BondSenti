@@ -1,48 +1,12 @@
 {% extends "navigator.html" %}
 
 {% block mainbody %}
-    <div class="fh5co-narrow-content">
-        <h2 class="fh5co-heading animate-box" data-animate-effect="fadeInLeft"> Fink 金融实体识别和链接 </h2>
+    <div class="fh5co-narrow-content" style="padding: 3vw 0 0 0;">
+        <h5 class="fh5co-heading animate-box" data-animate-effect="fadeInLeft" style="font-size: 35px; width: 100%;">
+            BondSenti: BERT-based Sentiment Analysis for Bond Default Risk
+        </h5>
         <div class="row">
-            <div class="col-md-6">
-                <div class="fh5co-feature animate-box" data-animate-effect="fadeInLeft">
-                    <div class="fh5co-icon">
-                        <img src="static/images/nlp_icon.png" alt="nlp_icon" width="60" height="60">
-                    </div>
-                    <div class="fh6co-text" style="text-align:center">
-                        <h3>      Focus on
-
-
-                        </h3>
-                        <p style="color: rgb(0, 0, 0);line-height:3em;">
-                            Fink-Group聚焦金融领域实体识别和链接，可为政府工作机关、金融公司提供政策支持服务。致力于帮助用户筛选关键信息后提供舆情分析，辅助做出决策。
-                            未来可拓展网络爬虫技术获取时事新闻、引入情感分析机制并给出政策建议。
-                            </p>
-                            <hr>
-                            <img src="static/images/process.png" alt="Nuvola_wikipedia_icon" width="1030" height="550">
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="fh5co-feature animate-box" data-animate-effect="fadeInLeft">
-                    <div class="fh5co-icon">
-                        <img src="static/images/bert.png" alt="Nuvola_wikipedia_icon" width="120" height="60">
-                    </div>
-                    <div class="fh6co-text" style="text-align:center">
-                        <h3>     Our Methods</h3>
-                        <p style="color: rgb(0,0,0);line-height:3em;">
-                            Fink 1.0.0 采用Bert-BiLSTM-CRF框架实现实体识别，并采用基于Jaro distance和关键字embedding匹配技术进行双重实体消歧,最后使用Flask进行前后端的交互。
-
-                        </p>
-                        <p style="color: rgb(0,0,0);line-height:3em;">
-                            模型取得优异效果， F1 = 0.877, P = 0.896, R = 0.848
-                        </p>
-                        <br>
-                        <hr>
-                    </div>
-                </div>
-            </div>
+            <img src="static/images/web.svg" alt="BondSenti_Pipline" style="width: 100%">
         </div>
     </div>
 {% endblock %}

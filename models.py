@@ -13,10 +13,10 @@ class BERT_BiLSTM_CRF(BertPreTrainedModel):
     def __init__(self, config, need_birnn=False, rnn_dim=128):
         super(BERT_BiLSTM_CRF, self).__init__(config)
         self.num_tags = config.num_labels
-        self.bert = BertModel(config) # 初始化BERT模型
+        self.bert = BertModel(config)  # 初始化BERT模型
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        out_dim = config.hidden_size # 输出维度初始化为BERT隐层大小
-        self.need_birnn = need_birnn # 如果need_birnn为True，则添加一个BiLSTM层
+        out_dim = config.hidden_size  # 输出维度初始化为BERT隐层大小
+        self.need_birnn = need_birnn  # 如果need_birnn为True，则添加一个BiLSTM层
         # 如果为False，则不要BiLSTM层
         if need_birnn:
             self.birnn = nn.LSTM(config.hidden_size, rnn_dim, num_layers=1, bidirectional=True, batch_first=True)
@@ -48,7 +48,7 @@ class BERT_BiLSTM_CRF(BertPreTrainedModel):
         return temp
 
 
-def get_model(args):
+def get_entity_rec_model(args):
     # num_labels = len(args.label_list)
     # config = BertConfig.from_pretrained(args.config_name if args.config_name else args.model_name_or_path,
     #                                     num_labels=num_labels)
@@ -59,4 +59,45 @@ def get_model(args):
     args.need_birnn = True
     args.rnn_dim = 256
     model = BERT_BiLSTM_CRF.from_pretrained(args.output_dir, need_birnn=args.need_birnn, rnn_dim=args.rnn_dim)
+    return model
+
+
+class MLP(torch.nn.Module):
+    def __init__(self, output_n=5, layer_list=[768, 256], dropout=0.3):
+        """
+        :param output_n: int 输出神经元个数
+        :param layer_list: list(int) 每层隐藏层神经元个数
+        :param dropout: float 训练完丢掉多少
+        """
+        super(MLP, self).__init__()
+        self.output_n = output_n
+        self.num_layer = len(layer_list)
+        self.layer_list = layer_list
+
+        # 隐藏层
+        self.hidden_layer = nn.ModuleList(
+            [nn.Sequential(nn.Linear(layer_list[i], layer_list[i+1], bias=True),
+                          torch.nn.BatchNorm1d(layer_list[i+1]),
+                          nn.ReLU(),
+                          nn.Dropout(dropout)
+            ) for i in range(self.num_layer-1)]
+        )
+
+        # 输出层
+        self.output_layer = nn.Sequential(
+            nn.Linear(layer_list[-1], output_n, bias=True),
+            nn.Softmax(dim=1),
+        )
+
+    def forward(self, x):
+        for layer in self.hidden_layer:
+            x = layer(x)
+        x = self.output_layer(x)
+        return x
+
+
+def get_sentiment_model(args):
+    model = MLP()
+    params = torch.load(args.sentiment_model_path, map_location=torch.device('cpu'))
+    model.load_state_dict(params)
     return model
