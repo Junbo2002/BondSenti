@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template,jsonify
+from flask import Flask, request, render_template, jsonify
 import nltk
 from autocorrect import spell
 import json
@@ -9,12 +9,7 @@ from predict import get_entity_lst
 import sys
 from models import get_entity_rec_model
 
-
-
 app = Flask(__name__)
-
-
-
 
 # 配置信息
 app.config['UPLOAD_FOLDER'] = 'upload/'
@@ -43,12 +38,12 @@ def query():
     :return:
     """
     text = request.values['text']
-    disambiMethod = request.values['disambiMethod']
- 
-    if not text:
-        return jsonify({"result": "error"})
+    disambi_method = request.values['disambiMethod']
 
-    recognized_entity = get_entity_lst(text, disambiMethod)
+    if not text:
+        return jsonify({"result": "text should not be empty"})
+
+    recognized_entity = get_entity_lst(text, disambi_method)
     return jsonify(recognized_entity)
 
 
@@ -100,5 +95,5 @@ def version():
 
 if __name__ == '__main__':
     # sys.path.append(r"D:\BERT_Chinese\Finish_API\Flink")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=80, host="0.0.0.0")
 

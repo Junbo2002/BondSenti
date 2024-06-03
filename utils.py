@@ -7,7 +7,6 @@ import argparse
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
 
-
 """部分数据预处理的过程，包括读取数据、转换为特征、构建数据集等。
 1. NerProcessor 类，通过 read_data 方法读取BIO标注的数据文件，
 2.通过 get_labels 方法获取标签集合，并通过 get_examples 方法获取示例。
@@ -17,23 +16,27 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
+
 class InputExample(object):
     """A single training/test example for simple sequence classification."""
 
     def __init__(self, guid, text, label=None):
         self.guid = guid
-        self.text = text 
+        self.text = text
         self.label = label
+
 
 # 定义一个表示数据特征的类
 class InputFeatures(object):
     """A single set of features of data."""
+
     def __init__(self, input_ids, input_mask, segment_ids, label_id, ori_tokens):
         self.input_ids = input_ids
         self.input_mask = input_mask
         self.segment_ids = segment_ids
         self.label_id = label_id
         self.ori_tokens = ori_tokens
+
 
 # NERProcessor类负责处理数据，读取和转换示例
 class NerProcessor(object):
@@ -67,13 +70,13 @@ class NerProcessor(object):
                     labels = []
 
         return lines
-    
+
     def get_labels(self, args):
         labels = set()
         if os.path.exists(os.path.join(args.output_dir, "label_list.pkl")):
-             # 如果已经存在标签列表文件，从中加载标签信息
+            # 如果已经存在标签列表文件，从中加载标签信息
             logger.info(f"loading labels info from {args.output_dir}")
-            with open(os.path.join(args.output_dir, "label_list.pkl"), "rb",) as f:
+            with open(os.path.join(args.output_dir, "label_list.pkl"), "rb", ) as f:
                 labels = pickle.load(f)
         else:
             # 若不存在，从训练数据中提取标签信息
@@ -91,7 +94,7 @@ class NerProcessor(object):
             else:
                 logger.info("loading error and return the default labels B,I,O")
                 labels = {"O", "B", "I"}
-        return labels 
+        return labels
 
     def get_examples(self, input_file, data=None):
         examples = []
@@ -106,10 +109,11 @@ class NerProcessor(object):
             examples.append(InputExample(guid=guid, text=text, label=label))
         return examples
 
+
 # 将示例转换为特征，用于模型输入
 # TODO 跳过这一步
 def convert_examples_to_features(args, examples, label_list, max_seq_length, tokenizer):
-    label_map = {label : i for i, label in enumerate(label_list)}
+    label_map = {label: i for i, label in enumerate(label_list)}
     features = []
     for (ex_index, example) in tqdm(enumerate(examples), desc="convert examples"):
         # if ex_index % 10000 == 0:
@@ -156,7 +160,7 @@ def convert_examples_to_features(args, examples, label_list, max_seq_length, tok
         ntokens.append("[SEP]")
         segment_ids.append(0)
         label_ids.append(label_map["O"])
-        input_ids = tokenizer.convert_tokens_to_ids(ntokens)   
+        input_ids = tokenizer.convert_tokens_to_ids(ntokens)
         input_mask = [1] * len(input_ids)
         assert len(ori_tokens) == len(ntokens), f"{len(ori_tokens)}, {len(ntokens)}, {ori_tokens}"
         while len(input_ids) < max_seq_length:
@@ -180,12 +184,13 @@ def convert_examples_to_features(args, examples, label_list, max_seq_length, tok
             logger.info("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
             logger.info("label_ids: %s" % " ".join([str(x) for x in label_ids]))
         features.append(
-                InputFeatures(input_ids=input_ids,
-                              input_mask=input_mask,
-                              segment_ids=segment_ids,
-                              label_id=label_ids,
-                              ori_tokens=ori_tokens))
+            InputFeatures(input_ids=input_ids,
+                          input_mask=input_mask,
+                          segment_ids=segment_ids,
+                          label_id=label_ids,
+                          ori_tokens=ori_tokens))
     return features
+
 
 # 获取数据集
 def get_Dataset(args, processor, tokenizer, mode="train", data=None):
@@ -257,8 +262,9 @@ def get_args():
     parser.add_argument("--clean", default=False, type=bool, help="clean the output dir")
     parser.add_argument("--need_birnn", default=False, type=bool)
     parser.add_argument("--rnn_dim", default=128, type=int)
-    parser.add_argument("--sentiment_model_path", default="../output/MLP.pth", type=str)
-    parser.add_argument("--sentiment_nums", default=5, type=int)
+    parser.add_argument("--sentiment_model_path", default="../output/MLP_best_MSE.pth", type=str)
+    parser.add_argument("--sentiment_embedding_model_path", default="../output/BERT_best_MSE.pth", type=str)
+    parser.add_argument("--sentiment_nums", default=3, type=int)
 
     args = parser.parse_args()
 
@@ -287,3 +293,15 @@ def make_seq(test_data):
         if i in punctuation_set:
             seq += '\n'
     return seq
+
+
+def find_entity_positions(lst, sub_lst):
+    positions = []
+    for i in range(0, len(lst) - len(sub_lst) + 1):
+        if lst[i] == sub_lst[0]:
+            for j in range(1, len(sub_lst)):
+                if lst[i + j] != sub_lst[j]:
+                    break
+                elif j == len(sub_lst) - 1:
+                    positions.append((i, i + j))
+    return positions  # [(), (), ...]

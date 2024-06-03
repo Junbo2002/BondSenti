@@ -6,10 +6,10 @@ import torch
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
 from tqdm import tqdm, trange
-from utils import NerProcessor, get_Dataset, make_seq
+from utils import NerProcessor, get_Dataset, make_seq, find_entity_positions
 from pytorch_transformers import (WEIGHTS_NAME, BertConfig, BertTokenizer)
 from const import DISAMBIGUTOR_DICT
-from models import get_entity_rec_model, get_sentiment_model
+from models import get_entity_rec_model, get_sentiment_model, get_sentiment_embedding_model
 from utils import get_args
 from const import TOKENIZER, TEXT_MAX_LENGTH, ENTITY_MAX_LENGTH, ARGS, DISAMBIGUTOR_DICT, EXAMPLES
 from difflib import SequenceMatcher
@@ -17,8 +17,17 @@ from difflib import SequenceMatcher
 args = ARGS
 entity_rec_model = get_entity_rec_model(args)
 sentiment_model = get_sentiment_model(args)
+sentiment_embedding_model = get_sentiment_embedding_model(args)
+
+# checkpoint = torch.load(args.sentiment_embedding_model_path, map_location=torch.device('cpu'))
+# entity_rec_model.bert.load_state_dict(checkpoint)
+
+# sentiment_embedding_model = entity_rec_model.bert
+
 entity_rec_model.eval()
 sentiment_model.eval()
+sentiment_embedding_model.eval()
+
 
 def tokenize(text, max_length):
     tokenizer = TOKENIZER
@@ -35,14 +44,32 @@ def tokenize(text, max_length):
     return encoded_text
 
 
+def form_sentiment_input(encoded_text, encoded_entity):
+    cnt = encoded_entity['attention_mask'].sum().item()  # 实体有效字符数
+    positions = find_entity_positions(encoded_text['input_ids'][0].tolist(),
+                                      encoded_entity['input_ids'][0].tolist()[1:cnt - 1])
+
+    output_text = sentiment_embedding_model(encoded_text['input_ids'], encoded_text['attention_mask'])
+    # output_entity = sentiment_embedding_model(encoded_entity['input_ids'], encoded_entity['attention_mask'])
+
+    # TODO 文本过长，这里可能会报错
+    tensor = torch.cat([output_text[0][0][i: j + 1] for (i, j) in positions],
+                       dim=0)  # [n * l, 768] n: 实体匹配cnt; l: 实体名称长度
+    mean_tensor, max_tensor = torch.mean(tensor, dim=0), torch.max(tensor, dim=0).values
+    input_tensor = torch.cat([mean_tensor, max_tensor, output_text[1][0]], dim=0)  # [768 * 3]
+    input_tensor = input_tensor.unsqueeze(0)  # [1, 2304]
+    return input_tensor
+
+
 def get_sentiment(text, entity):
     encoded_text = tokenize(text, TEXT_MAX_LENGTH)
     encoded_entity = tokenize(entity, ENTITY_MAX_LENGTH)
 
     with torch.no_grad():
-        encoded_text = entity_rec_model.bert(encoded_text['input_ids'], encoded_text['attention_mask'])
-        encoded_entity = entity_rec_model.bert(encoded_entity['input_ids'], encoded_entity['attention_mask'])
-        sentiment_predict = sentiment_model(encoded_text[1] + encoded_entity[1])
+        # encoded_text = entity_rec_model.bert(encoded_text['input_ids'], encoded_text['attention_mask'])
+        # encoded_entity = entity_rec_model.bert(encoded_entity['input_ids'], encoded_entity['attention_mask'])
+        sentiment_input = form_sentiment_input(encoded_text, encoded_entity)
+        sentiment_predict = sentiment_model(sentiment_input)
     # print(sentiment_predict)
     sentiment_predict = sentiment_predict[0].tolist()
     # 保留两位小数
@@ -103,7 +130,7 @@ def forward(args, model, text):
     id2label = {i: label for i, label in enumerate(["B-STO", "I-ORG", "B-ORG", "I-STO", "O"])}
     # print(args)
     if args.do_test:
-        label_map = {i : label for i, label in enumerate(label_list)}
+        # label_map = {i : label for i, label in enumerate(label_list)}
         tokenizer = BertTokenizer.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
         args = torch.load(os.path.join(args.output_dir, 'training_args.bin'))
         model.to(device)
@@ -116,7 +143,8 @@ def forward(args, model, text):
 
         pred_labels = []
         with torch.no_grad():
-            for b_i, (input_ids, input_mask, segment_ids, label_ids) in enumerate(tqdm(test_dataloader, desc="Predicting")):
+            for b_i, (input_ids, input_mask, segment_ids, label_ids) in enumerate(
+                    tqdm(test_dataloader, desc="Predicting")):
                 input_ids = input_ids.to(device)
                 input_mask = input_mask.to(device)
                 segment_ids = segment_ids.to(device)
